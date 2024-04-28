@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task List</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #5f9ea0;
+        margin: 0;
+        padding: 20px;
+    }
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        background-color: #008080;
+        color: #fff;
+        padding: 20px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        font-family: 'Lucida Handwriting';
+    }
+    h1 {
+        text-align: center;
+    }
+    button {
+        height: 45px;
+        width: 100px;
+        font-size: medium;
+        background-color: #50352a;
+        color: #fff;
+        border-radius: 4px;
+    }
+    .taskItem {
+        margin-bottom: 10px;
+        padding: 10px;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        background-color: #a3c1ad;
+        color: black;
+    }
+    .taskItem span {
+        display: block;
+    }
+    .taskItem button {
+        background-color: #194759;
+        color: #fff;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        border-radius: 3px;
+        margin-top: 5px;
+        height: 30px;
+        width: 80px;
+    }
+    .editFields {
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 10px;
+    }
+    .editFields input {
+        height: 25px;
+        font-size: medium;
+        width: 100px;
+    }
+    .editFields select {
+        height: 30px;
+        font-size: medium;
+        width: 120px;
+    }
+    .editFields button {
+        background-color: #4CAF50;
+        color: white;
+    }
+    .overlapMessage {
+        color: red;
+        margin-top: 5px;
+        display: none;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <h1>Task List</h1>
+        <div id="taskList"></div>
+        <div class="back"><button onclick="goBack()">Go Back</button></div>
+    </div>
+    <script>
+        const taskListContainer = document.getElementById('taskList');
+        function displayTasks() {
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+            let html = '';
+            tasks.forEach((task, index) => {
+                html += `
+                    <div class="taskItem">
+                        <span>Task Name : ${task.name}</span>
+                        <span>Date : ${task.date}</span>
+                        <span>Time : ${task.time}</span>
+                        <span>Duration : ${task.duration} minutes</span>
+                        <span>Status : ${task.status}</span>
+                        <div id="editFields${index}" class="editFields">
+                            <input type="date" id="editDate${index}" value="${task.date}">
+                            <input type="time" id="editTime${index}" value="${task.time}">
+                            <input type="number" id="editDuration${index}" value="${task.duration}">
+                            <select id="editStatus${index}">
+                                <option value="Pending" ${task.status === 'Pending' ? 'selected' : ''}>Pending</option>
+                                <option value="In Progress" ${task.status === 'In Progress' ? 'selected' : ''}>In Progress</option>
+                                <option value="Completed" ${task.status === 'Completed' ? 'selected' : ''}>Completed</option>
+                            </select>
+                            <button onclick="saveChanges(${index})">Save</button>
+                        </div>
+                        <button onclick="toggleEdit(${index})">Edit</button>
+                        <button onclick="deleteTask(${index})">Delete</button>
+                        <div id="overlapMessage${index}" class="overlapMessage"></div>
+                    </div>
+                `;
+            });
+            taskListContainer.innerHTML = html;
+        }
+        function saveChanges(index) {
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.sort((a, b) => new Date(a.date) - new Date(b.date));
+            const editedDate = document.getElementById(`editDate${index}`).value;
+            const editedTime = document.getElementById(`editTime${index}`).value;
+            const editedDuration = parseInt(document.getElementById(`editDuration${index}`).value);
+            const editedStatus = document.getElementById(`editStatus${index}`).value;
+            if (editedDate && editedTime && !isNaN(editedDuration) && editedDuration > 0) {
+                const taskStart = new Date(`${editedDate}T${editedTime}`);
+                const taskEnd = new Date(taskStart.getTime() + editedDuration * 60000);
+                const overlap = tasks.some((task, i) => {
+                    if (i !== index) {
+                        const existingStart = new Date(`${task.date}T${task.time}`);
+                        const existingEnd = new Date(existingStart.getTime() + task.duration * 60000);
+                        return taskStart < existingEnd && taskEnd > existingStart;
+                    }
+                    return false;
+                });
+                if (!overlap) {
+                    tasks[index].date = editedDate;
+                    tasks[index].time = editedTime;
+                    tasks[index].duration = editedDuration;
+                    tasks[index].status = editedStatus;
+                    localStorage.setItem('tasks', JSON.stringify(tasks));
+                    displayTasks();
+                    alert('Task edited successfully!');
+                    toggleEdit(index);
+                } 
+                else {
+                    const overlapMessage = document.getElementById(`overlapMessage${index}`);
+                    overlapMessage.textContent = 'Task overlaps with another task. Please choose a different time.';
+                    overlapMessage.style.display = 'block';
+                }
+            } 
+            else {
+                alert('Please enter valid date, time, duration, and status.');
+            }
+        }
+        function deleteTask(index) {
+            let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+            tasks.splice(index, 1);
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+            displayTasks();
+        }
+        function toggleEdit(index) {
+            const editFields = document.getElementById(`editFields${index}`);
+            editFields.style.display = editFields.style.display === 'none' ? 'flex' : 'none';
+        }
+        function goBack() {
+            window.history.back();
+        }
+        displayTasks();
+    </script>
+</body>
+</html>

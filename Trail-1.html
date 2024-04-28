@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Task Management App</title>
+<style>
+    body {
+        background-image: url('pitc.jpg');
+        margin: 0;
+        padding: 0;
+        font-size: large;
+        font-family: 'Lucida Handwriting';
+    }
+    .container {
+        max-width: 800px;
+        margin: 20px auto;
+        background-color: #003366;
+        padding: 10px;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .h1 {
+        text-align: center;
+        color: #fff;
+        padding: 10px;
+    }
+    h2{
+        font-size: 25px;
+        display: flex;
+        flex-wrap: wrap;
+    }
+    .matter{
+        background-color: #cccccc;
+        padding: 0px 20px;
+    }
+    .Tasks{
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+    }
+    button{
+        height: 40px;
+        width: 150px;
+        font-size: medium;
+        background-color: #50352a;
+        color: #fff;
+        margin: 10px;
+    }
+    input{
+        height: 20px;
+        font-size: medium;
+        background-color: #fcfbf4;
+    }
+    select{
+        height: 30px;
+        width: 100px;
+        font-size: 15px;
+        background-color: #fcfbf4;
+    }
+    .taskItem {
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+        border-bottom: 1px solid #ccc;
+    }
+    .taskItem:last-child {
+        border-bottom: none;
+    }
+    .taskItem input[type="checkbox"] {
+        margin-bottom: 5px;
+        background-color: #9bddff;
+    }
+    .taskItem button {
+        background-color: #990000;
+        color: #fff;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+        border-radius: 3px;
+    }
+    .overlapMessage {
+        color: red;
+        margin-top: 10px;
+        display: none;
+    }
+</style>
+</head>
+<body>
+    <div class="container">
+        <div class="h1">
+            <h1>Task Management App</h1>
+            <hr>
+        </div>
+        <div class="matter">
+            <h2>Enter the task :</h2>
+            <div>
+                <label for="taskName">Task Name :</label>
+                <input type="text" id="taskName" placeholder="Enter task name...">
+            </div>
+            <br>
+            <div>
+                <label for="taskDate">Date to Perform :</label>
+                <input type="date" id="taskDate" min="" required>
+            </div>
+            <br>
+            <div>
+                <label for="taskTime">Time to Perform :</label>
+                <input type="time" id="taskTime">
+            </div>
+            <br>
+            <div>
+                <label for="taskDuration">Duration (in minutes) :</label>
+                <input type="number" id="taskDuration" placeholder="Enter task duration...">
+            </div>
+            <br>
+            <div>
+                <label for="taskStatus">Status :</label>
+                <select id="taskStatus">
+                    <option value="Pending">Pending</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Completed">Completed</option>
+                </select>
+            </div>
+            <br>
+            <div class="Tasks">
+                <button onclick="addTask()">Add the Task</button>
+                <button onclick="viewTasks()">View Tasks</button>
+                <div id="overlapMessage" class="overlapMessage"></div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const taskDateInput = document.getElementById('taskDate');
+        const today = new Date().toISOString().split('T')[0];
+        taskDateInput.setAttribute('min', today);
+        function addTask() {
+            const taskDate = taskDateInput.value;
+            const selectedDate = new Date(taskDate);
+            const currentDate = new Date();
+            if (selectedDate > currentDate) {
+                const taskName = document.getElementById('taskName').value.trim();
+                const taskTime = document.getElementById('taskTime').value;
+                const taskDuration = parseInt(document.getElementById('taskDuration').value);
+                const taskStatus = document.getElementById('taskStatus').value;
+                if (taskName !== '' && taskDate !== '' && taskTime !== '' && !isNaN(taskDuration) && taskDuration > 0) {
+                    const taskStart = new Date(`${taskDate}T${taskTime}`);
+                    const taskEnd = new Date(taskStart.getTime() + taskDuration * 60000);
+                    let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+                    const overlap = tasks.some(task => {
+                        const existingStart = new Date(`${task.date}T${task.time}`);
+                        const existingEnd = new Date(existingStart.getTime() + task.duration * 60000);
+                        return taskStart < existingEnd && taskEnd > existingStart;
+                    });
+                    if (!overlap) {
+                        const newTask = {
+                            name: taskName,
+                            date: taskDate,
+                            time: taskTime,
+                            duration: taskDuration,
+                            status: taskStatus
+                        };
+                        tasks.push(newTask);
+                        localStorage.setItem('tasks', JSON.stringify(tasks));
+                        alert('Task added successfully!');
+                        clearFields();
+                    } 
+                    else {
+                        const overlapMessage = document.getElementById('overlapMessage');
+                        overlapMessage.textContent = 'Task overlaps with an existing schedule. Please choose a different time.';
+                        overlapMessage.style.display = 'block';
+                    }
+                } 
+                else {
+                    alert('Please enter a valid task name, date, time, and duration.');
+                }
+            } 
+            else {
+                alert('Please select a date that is today or in the future.');
+            }
+        }
+        function clearFields() {
+            document.getElementById('taskName').value = '';
+            taskDateInput.value = '';
+            document.getElementById('taskTime').value = '';
+            document.getElementById('taskDuration').value = '';
+            document.getElementById('taskStatus').value = 'Pending';
+            const overlapMessage = document.getElementById('overlapMessage');
+            overlapMessage.style.display = 'none';
+        }
+        function viewTasks() {
+            window.location.href = 'task.html';
+        }
+    </script>
+</body>
+</html>
