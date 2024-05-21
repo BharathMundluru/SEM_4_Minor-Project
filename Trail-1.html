@@ -138,7 +138,7 @@
             const taskDate = taskDateInput.value;
             const selectedDate = new Date(taskDate);
             const currentDate = new Date();
-            if (selectedDate > currentDate) {
+            if (selectedDate => currentDate) {
                 const taskName = document.getElementById('taskName').value.trim();
                 const taskTime = document.getElementById('taskTime').value;
                 const taskDuration = parseInt(document.getElementById('taskDuration').value);
